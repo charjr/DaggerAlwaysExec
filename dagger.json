@@ -1,0 +1,6 @@
+{
+  "name": "always-exec",
+  "sdk": "php",
+  "source": ".",
+  "engineVersion": "v0.12.5"
+}

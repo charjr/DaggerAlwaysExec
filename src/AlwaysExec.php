@@ -12,6 +12,8 @@ use Dagger\Container;
 #[DaggerObject]
 class AlwaysExec
 {
+    private const STDOUT = '/tmp/stdout';
+    private const STDERR = '/tmp/stderr';
     private const LAST_EXIT_CODE = '/tmp/exit-code';
 
     #[DaggerFunction('Execute command, ignore exit code and return Container')]
@@ -22,14 +24,14 @@ class AlwaysExec
         ?bool $skipEntrypoint = true,
         ?bool $useEntrypoint = false,
         ?string $stdin = '',
-        ?string $redirectStdout = '',
-        ?string $redirectStderr = '',
         ?bool $experimentalPrivilegedNesting = false,
         ?bool $insecureRootCapabilities = false,
     ): Container {
         $command = sprintf(
-            '%s; echo -n $? > %s',
+            '%s 1> %s 2> %s; echo -n $? > %s',
             implode(' ', $args),
+            self::STDOUT,
+            self::STDERR,
             self::LAST_EXIT_CODE,
         );
 
@@ -38,11 +40,21 @@ class AlwaysExec
             skipEntrypoint: $skipEntrypoint,
             useEntrypoint: $useEntrypoint,
             stdin: $stdin,
-            redirectStdout: $redirectStdout,
-            redirectStderr: $redirectStderr,
             experimentalPrivilegedNesting: $experimentalPrivilegedNesting,
             insecureRootCapabilities: $insecureRootCapabilities
         );
+    }
+
+    #[DaggerFunction('Return stdout')]
+    public function stdout(Container $container): string
+    {
+        return $container->file(self::STDOUT)->contents();
+    }
+
+    #[DaggerFunction('Return stderr')]
+    public function stderr(Container $container): string
+    {
+        return $container->file(self::STDERR)->contents();
     }
 
     #[DaggerFunction('Return last ignored exit code')]
